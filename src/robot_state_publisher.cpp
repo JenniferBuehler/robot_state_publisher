@@ -55,6 +55,20 @@ namespace robot_state_publisher{
   }
 
 
+  RobotStatePublisher::RobotStatePublisher()
+    : model_(urdf::Model())
+  {
+    // The KDL tree would be empty for an empty robot model. 
+    // So no children need to be added with addChildren.
+  }
+
+
+  RobotStatePublisher RobotStatePublisher::create(const KDL::Tree& tree, const urdf::Model& model)
+  {
+     return RobotStatePublisher(tree,model);
+  }
+
+
   // add children to correct maps
   void RobotStatePublisher::addChildren(const KDL::SegmentMap::const_iterator segment)
   {

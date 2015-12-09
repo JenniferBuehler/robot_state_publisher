@@ -58,23 +58,60 @@ public:
    * \param tree The kinematic model of a robot, represented by a KDL Tree
    */
   JointStateListener(const KDL::Tree& tree, const MimicMap& m, const urdf::Model& model = urdf::Model());
+  
+  /** Constructor which additionally takes a RobotStatePublisher object as parameter.
+   * \param tree The kinematic model of a robot, represented by a KDL Tree
+   * \param state_publisher_prototype a template object of the RobotStatePublisher class to use. 
+   * This will be used to locally create a RobotStatePublisher object of the same type using
+   * RobotStatePublisher::create(const KDL::Tree&,const urdf::Model&). 
+   */
+  JointStateListener(robot_state_publisher::RobotStatePublisher& state_publisher_prototype, 
+           const KDL::Tree& tree, const MimicMap& m, const urdf::Model& model = urdf::Model());
 
   /// Destructor
-  ~JointStateListener();
+  virtual ~JointStateListener();
+
+protected:
+
+  /**
+   * Callback function for publishing joint states. To publish, the local RobotStatePublisher object
+   * should be used, which can be obtained with getRobotStatePublisher().
+   * The behaviour of this methods may be changed by subclasses.
+   */
+  virtual void handleJointState(const JointStateConstPtr& state);
+  
+  /**
+   * Callback function for publishing the fixed transforms using the state_publisher_. 
+   * Behaviour can be changed by subclasses.
+   */
+  virtual void handleFixedJoint(const ros::TimerEvent& e);
+  
+  /**
+   * Returns the RobotStatePublisher which should be used to publish updates.
+   */
+  robot_state_publisher::RobotStatePublisher& getRobotStatePublisher();
+
+  /**
+   * Returns the mimic map which was initialised in the constructor.
+   */
+  MimicMap& getMimicMap();
 
 private:
   void callbackJointState(const JointStateConstPtr& state);
   void callbackFixedJoint(const ros::TimerEvent& e);
 
+  void initFromParams();
+
   std::string tf_prefix_;
   Duration publish_interval_;
-  robot_state_publisher::RobotStatePublisher state_publisher_;
   Subscriber joint_state_sub_;
   ros::Timer timer_;
   ros::Time last_callback_time_;
   std::map<std::string, ros::Time> last_publish_time_;
   MimicMap mimic_;
   bool use_tf_static_;
+  
+  robot_state_publisher::RobotStatePublisher state_publisher_;
 
 };
 }

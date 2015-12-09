@@ -3,7 +3,7 @@ project(robot_state_publisher)
 
 find_package(orocos_kdl REQUIRED) 
 find_package(catkin REQUIRED
-  COMPONENTS roscpp rosconsole rostime tf tf2_ros tf2_kdl kdl_parser cmake_modules
+  COMPONENTS roscpp rosconsole rostest rostime tf tf2_ros tf2_kdl kdl_parser cmake_modules
 )
 find_package(Eigen REQUIRED)
 
@@ -29,38 +29,54 @@ target_link_libraries(${PROJECT_NAME} ${PROJECT_NAME}_solver ${orocos_kdl_LIBRAR
 add_executable(state_publisher src/joint_state_listener.cpp)
 target_link_libraries(state_publisher ${PROJECT_NAME}_solver ${orocos_kdl_LIBRARIES})
 
-# CATKIN has no ROS test for now. Disabling
+# Add tests.
+if (CATKIN_ENABLE_TESTING)
 
-#rosbuild_add_executable(test_publisher test/test_publisher.cpp )
-#target_link_libraries(test_publisher ${PROJECT_NAME}_solver)
-#rosbuild_add_gtest_build_flags(test_publisher)
-#rosbuild_declare_test(test_publisher)
-#rosbuild_add_rostest(${CMAKE_CURRENT_SOURCE_DIR}/test/test_publisher.launch)
+    catkin_add_gtest(test_publisher ${CMAKE_CURRENT_SOURCE_DIR}/test/test_publisher.launch test/test_publisher.cpp)
+    target_link_libraries(test_publisher ${PROJECT_NAME}_solver)
+    add_rostest(${CMAKE_CURRENT_SOURCE_DIR}/test/test_publisher.launch)
 
-#rosbuild_add_executable(test_one_link test/test_one_link.cpp )
-#target_link_libraries(test_one_link ${PROJECT_NAME}_solver)
-#rosbuild_add_gtest_build_flags(test_one_link)
-#rosbuild_declare_test(test_one_link)
-#rosbuild_add_rostest(${CMAKE_CURRENT_SOURCE_DIR}/test/test_one_link.launch)
+    catkin_add_gtest(test_one_link test/test_one_link.cpp )
+    target_link_libraries(test_one_link ${PROJECT_NAME}_solver)
+    add_rostest(${CMAKE_CURRENT_SOURCE_DIR}/test/test_one_link.launch)
 
-#rosbuild_add_executable(test_two_links_fixed_joint test/test_two_links_fixed_joint.cpp )
-#target_link_libraries(test_two_links_fixed_joint ${PROJECT_NAME}_solver)
-#rosbuild_add_gtest_build_flags(test_two_links_fixed_joint)
-#rosbuild_declare_test(test_two_links_fixed_joint)
-#rosbuild_add_rostest(${CMAKE_CURRENT_SOURCE_DIR}/test/test_two_links_fixed_joint.launch)
+    catkin_add_gtest(test_two_links_fixed_joint test/test_two_links_fixed_joint.cpp )
+    target_link_libraries(test_two_links_fixed_joint ${PROJECT_NAME}_solver)
+    add_rostest(${CMAKE_CURRENT_SOURCE_DIR}/test/test_two_links_fixed_joint.launch)
 
-#rosbuild_add_executable(test_two_links_moving_joint test/test_two_links_moving_joint.cpp )
-#target_link_libraries(test_two_links_moving_joint ${PROJECT_NAME}_solver)
-#rosbuild_add_gtest_build_flags(test_two_links_moving_joint)
-#rosbuild_declare_test(test_two_links_moving_joint)
-#rosbuild_add_rostest(${CMAKE_CURRENT_SOURCE_DIR}/test/test_two_links_moving_joint.launch)
+    catkin_add_gtest(test_two_links_moving_joint test/test_two_links_moving_joint.cpp )
+    target_link_libraries(test_two_links_moving_joint ${PROJECT_NAME}_solver)
+    add_rostest(${CMAKE_CURRENT_SOURCE_DIR}/test/test_two_links_moving_joint.launch)
 
-# Download needed data file
-#rosbuild_download_test_data(http://pr.willowgarage.com/data/robot_state_publisher/joint_states_indexed.bag test/joint_states_indexed.bag 793e0b566ebe4698265a936b92fa2bba)
 
-install(TARGETS ${PROJECT_NAME}_solver ${PROJECT_NAME} state_publisher
-  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+    # Download needed data file
+    catkin_download_test_data(
+        joint_states_indexed_bag
+        http://wiki.ros.org/robot_state_publisher/data?action=AttachFile&do=get&target=joint_states_indexed.bag
+        DESTINATION ${CATKIN_DEVEL_PREFIX}/${CATKIN_PACKAGE_SHARE_DESTINATION}/test
+        FILENAME joint_states_indexed.bag
+        MD5 793e0b566ebe4698265a936b92fa2bba)
 
-install(DIRECTORY include/${PROJECT_NAME}/
-  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION})
+    install(FILES 
+           test/one_link.urdf 
+           test/pr2.urdf 
+           test/two_links_fixed_joint.urdf 
+           test/two_links_moving_joint.urdf 
+           DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/test)
+    install(FILES 
+            test/test_publisher.launch 
+            test/test_one_link.launch
+            test/test_two_links_fixed_joint.launch 
+            test/test_two_links_moving_joint.launch
+            DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/test)
+
+
+
+    install(TARGETS ${PROJECT_NAME}_solver ${PROJECT_NAME} state_publisher
+      LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+      RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+
+    install(DIRECTORY include/${PROJECT_NAME}/
+      DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION})
+
+endif()

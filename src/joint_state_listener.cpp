@@ -48,7 +48,24 @@ using namespace KDL;
 using namespace robot_state_publisher;
 
 JointStateListener::JointStateListener(const KDL::Tree& tree, const MimicMap& m, const urdf::Model& model)
-  : state_publisher_(tree, model), mimic_(m)
+  : state_publisher_(tree, model), 
+    mimic_(m)
+{
+    initFromParams();
+};
+
+
+JointStateListener::JointStateListener(robot_state_publisher::RobotStatePublisher& state_publisher_prototype, 
+        const KDL::Tree& tree, const MimicMap& m, const urdf::Model& model)
+  : state_publisher_(state_publisher_prototype.create(tree,model)), 
+    mimic_(m)
+{
+    initFromParams();
+};
+
+
+
+void JointStateListener::initFromParams()
 {
   ros::NodeHandle n_tilde("~");
   ros::NodeHandle n;
@@ -70,20 +87,39 @@ JointStateListener::JointStateListener(const KDL::Tree& tree, const MimicMap& m,
   // trigger to publish fixed joints
   // if using static transform broadcaster, this will be a oneshot trigger and only run once
   timer_ = n_tilde.createTimer(publish_interval_, &JointStateListener::callbackFixedJoint, this, use_tf_static_);
-
-};
-
+}
 
 JointStateListener::~JointStateListener()
 {};
 
 
+robot_state_publisher::RobotStatePublisher& JointStateListener::getRobotStatePublisher(){
+    return state_publisher_;
+}
+
+MimicMap& JointStateListener::getMimicMap()
+{
+    return mimic_;
+}
+
+
 void JointStateListener::callbackFixedJoint(const ros::TimerEvent& e)
+{
+    this->handleFixedJoint(e);
+}
+
+void JointStateListener::callbackJointState(const JointStateConstPtr& state)
+{
+    this->handleJointState(state);
+}
+
+
+void JointStateListener::handleFixedJoint(const ros::TimerEvent& e)
 {
   state_publisher_.publishFixedTransforms(tf_prefix_, use_tf_static_);
 }
 
-void JointStateListener::callbackJointState(const JointStateConstPtr& state)
+void JointStateListener::handleJointState(const JointStateConstPtr& state)
 {
   if (state->name.size() != state->position.size()){
     ROS_ERROR("Robot state publisher received an invalid joint state vector");
@@ -131,6 +167,9 @@ void JointStateListener::callbackJointState(const JointStateConstPtr& state)
       last_publish_time_[state->name[i]] = state->header.stamp;
   }
 }
+
+
+
 
 // ----------------------------------
 // ----- MAIN -----------------------

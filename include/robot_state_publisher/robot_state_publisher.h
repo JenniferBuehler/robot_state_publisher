@@ -63,20 +63,33 @@ public:
 class RobotStatePublisher
 {
 public:
+  /** Constructor. Initializes with an empty model.
+   */
+  RobotStatePublisher();
+
   /** Constructor
    * \param tree The kinematic model of a robot, represented by a KDL Tree 
    */
   RobotStatePublisher(const KDL::Tree& tree, const urdf::Model& model = urdf::Model());
 
   /// Destructor
-  ~RobotStatePublisher(){};
+  virtual ~RobotStatePublisher(){};
 
   /** Publish transforms to tf 
    * \param joint_positions A map of joint names and joint positions. 
    * \param time The time at which the joint positions were recorded
    */
-  void publishTransforms(const std::map<std::string, double>& joint_positions, const ros::Time& time, const std::string& tf_prefix);
-  void publishFixedTransforms(const std::string& tf_prefix, bool use_tf_static);
+  virtual void publishTransforms(const std::map<std::string, double>& joint_positions, const ros::Time& time, const std::string& tf_prefix);
+  virtual void publishFixedTransforms(const std::string& tf_prefix, bool use_tf_static);
+
+  /**
+   * Creates a new robot state publisher of the same class, initialises it with the given model (as would be done
+   * in the constructor), and returns it.
+   * Subclasses should implement this method to ensure consistent usage of the desired class in JointStatePublisher.
+   * It is required to use this method instead of a constructor to ensure a const reference to the urdf::Model object
+   * can be maintained.
+   */
+  virtual RobotStatePublisher create(const KDL::Tree& tree, const urdf::Model& model = urdf::Model());
 
 private:
   void addChildren(const KDL::SegmentMap::const_iterator segment);
